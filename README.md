@@ -1,103 +1,79 @@
-# Pace-Bud 🏃‍♂️🍂
+# Pace-Bud
 
-> **Mindful outdoor running companion with daylight intelligence, bespoke Continental concierge aesthetics, and offline resilience.**
+> **An offline-resilient, voice-activated micro-expedition generator designed to break screen inertia using open-weight AI.**
 
-Pace-Bud frees desk workers from endless screen time and takes them into the golden warmth of dusk. With astronomical sunset tracking, stoic dispatches, never-pausing timer mechanics, and offline voice logging, it restores balance and vitality.
-
----
-
-## 🏛 Features
-
-1. **Astronomical Horizon & Sunset Calculation**: Automatically computes exact sunset and minutes of remaining sunlight using the browser's coordinates and astronomical ephemeris (`astral`).
-2. **The Continental Concierge**: Personal stoic running dispatches inspired by John Wick's Continental universe, driven by DigitalOcean Gemma LLM (with offline fallback templates) and synthesized via ElevenLabs voice (or local browser `SpeechSynthesis`).
-3. **Never-Pausing Tabular Timer**: Built on timestamp offsets so locking your phone or putting it in your pocket won't pause the timer. Uses the Page Visibility API to calculate **pocket time vs. screen time**.
-4. **Cadence Accompaniment (Dual-Mode Spotify)**:
-   - **Default**: Zero-auth Spotify Embed iframe ready immediately.
-   - **Optional**: One-click "Connect Spotify Premium" via OAuth PKCE & Web Playback SDK.
-5. **Offline Voice & Field Logs**: Record voice observations while running outside with zero cell signal. Stored in IndexedDB (`idb-keyval`) and automatically synced when back online.
-6. **Bespoke Luxury Palettes**: 5 switchable Continental themes:
-   - *Oxford Navy* (Default)
-   - *Racing Green*
-   - *Camel & Cashmere*
-   - *St. Moritz Ice*
-   - *Vintage Parchment*
-7. **Stats for Nerds**: Deep analytics correlating daylight remaining with mood delta improvements, and Apple Health minute-by-minute heart rate / elevation curves.
+Pace-Bud is a fully open-source React/FastAPI application built for the Hacktoberfest 2026 "Touch Grass" challenge. It actively targets desk fatigue by calculating local daylight windows and generating spontaneous, time-sensitive outdoor routing dispatches. It features a decentralized, zero-signal audio queue, allowing runners to log field observations entirely offline, syncing only when network connectivity is restored.
 
 ---
 
-## 🛠 Tech Stack
+## System Architecture & Features
 
-- **Backend**: FastAPI, Pydantic, Motor / PyMongo, Astral, OpenAI SDK (Gemma), ElevenLabs API, Temporal SDK (optional)
-- **Frontend**: React 18, Vite, Tailwind CSS, Lucide Icons, React Router 6, idb-keyval, Service Worker (PWA)
+1. **Astronomical Daylight Calculation:** Computes exact local sunset and remaining daylight minutes via ephemeris (`astral`), triggering time-sensitive dispatch windows.
+2. **Open-Weight AI Dispatches:** Leverages Google's Gemma 2 9B (via local Ollama) to generate concise, location-aware outdoor objectives without relying on proprietary cloud LLM providers.
+3. **Decentralized Audio Field Queue (Offline Mode):** Captures voice logs in zero-signal environments. Audio blobs are saved locally via browser `IndexedDB` (`idb-keyval`) and synced asynchronously when the device regains connectivity.
+4. **Resilient Run Telemetry:** A decoupled timer built on timestamp offsets (`Date.now() - startTime`) combined with the Page Visibility API to accurately log "pocket time" versus "screen time," ensuring metrics survive app backgrounding.
+5. **Cadence Integration:** Dual-mode Spotify support featuring a zero-auth embed or optional PKCE OAuth Web Playback SDK connection.
+6. **Time-Series Analytics:** Logs pre- and post-run mood deltas against daylight exposure and biometric data (Apple Health CSV format) into MongoDB Atlas for visual correlation.
 
 ---
 
-## 🚀 Quick Start
+## Tech Stack
+
+- **Backend:** Python 3.10+, FastAPI, Motor (Async MongoDB), Astral, Temporal SDK (optional workflow engine).
+- **Inference:** Ollama (Gemma 2 9B), ElevenLabs TTS.
+- **Frontend:** React 18, Vite, Tailwind CSS, Chart.js.
+- **Database:** MongoDB Atlas (Time-Series).
+
+---
+
+## Quick Start
 
 ### 1. Prerequisites
 - Python 3.10+
 - Node.js 18+
-- (Optional) MongoDB Atlas or local MongoDB instance
+- Ollama installed locally with `gemma2:9b` pulled.
 
 ### 2. Environment Configuration
-Copy `.env.example` to `.env`:
+Copy the template and configure your keys:
 ```bash
 cp .env.example .env
-```
+Ensure your local Ollama endpoint is mapped:
 
-Configure your API keys:
-```env
-MONGODB_URI=mongodb+srv://...  # Or local mongodb://localhost:27017/pacebud
-DIGITALOCEAN_GEMMA_ENDPOINT=http://<droplet-ip>/v1
-DIGITALOCEAN_API_KEY=your-api-key
-GEMMA_MODEL=gemma-2-9b-it
-ELEVENLABS_API_KEY=your-elevenlabs-key
-ELEVENLABS_VOICE_ID=21m00Tcm4TlvDq8ikWAM
-USE_TEMPORAL=false
-```
-*Note: If MongoDB, Gemma, or ElevenLabs keys are not provided, Pace-Bud gracefully falls back to local curated dispatches, browser speech synthesis, and offline seed analytics.*
+Code snippet
+DIGITALOCEAN_GEMMA_ENDPOINT=[http://127.0.0.1:11434/v1](http://127.0.0.1:11434/v1)
+DIGITALOCEAN_API_KEY=ollama
+GEMMA_MODEL=gemma2:9b
+3. Backend Initialization
+Initialize the virtual environment and seed the time-series database with historical run metrics:
 
-### 3. Backend Setup
-```bash
+Bash
 cd backend
 pip install -r requirements.txt
-python -m uvicorn app.main:app --reload --port 8000
-```
-
-To seed 15 historical runs for John Wick with biometrics:
-```bash
 python seed.py
-```
-
-### 4. Frontend Setup
-```bash
+uvicorn app.main:app --reload --port 8000
+4. Frontend Initialization
+Bash
 cd frontend
 npm install
 npm run dev
-```
+Navigate to http://localhost:5173.
 
-Open [http://localhost:5173](http://localhost:5173) in your browser.
+Offline Audio Workflow (Temporal Engine)
+For production deployments requiring robust retry logic for the offline audio queue, Temporal can be enabled.
 
----
+Start the Temporal cluster: temporal server start-dev
 
-## ⚙️ Temporal Workflow (Optional)
+Update .env: USE_TEMPORAL=true
 
-In-app background processing is the default (`USE_TEMPORAL=false`).
-To activate Temporal workflow orchestration:
-1. Start Temporal server: `temporal server start-dev`
-2. Set `USE_TEMPORAL=true` in `.env`
-3. Start the worker:
-   ```bash
-   python backend/app/worker.py
-   ```
+Initialize the worker:
 
----
+Bash
+python backend/app/worker.py
+Repository Verification
+[x] Backend syntax & import validation
 
-## 🛡 Verification Checklist
+[x] Ephemeris calculation tests passing
 
-- [x] Backend syntax & import validation (`app.main:app`)
-- [x] Frontend production build (`npm run build`)
-- [x] Daylight sunset calculations (`astral`)
-- [x] Offline IndexedDB audio log queuing
-- [x] Dual-mode Spotify player
-- [x] 5 Luxury theme palettes with persistent local state
+[x] IndexedDB queue offline persistence verified
+
+[x] Local LLM (Ollama) routing confirmed
